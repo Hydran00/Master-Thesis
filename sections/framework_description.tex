@@ -9,7 +9,7 @@
 
 The remote robotised US framework consists of two main parts: the leader's side, which corresponds to the environment for the physician, and the follower's side, which corresponds to the environment for the patient (see \autoref{fig:framework}). The leader side profits from a real-time updated virtual reality scene streamed over a VR headset with the incoming feedback from the follower, such as the point cloud rendering of the patient overlapped to its SMPL model, the force and wrenches readings of the force and torque sensor mapped into the haptic interface, and the ultrasound probe stream, while the follower side capitalises on a 6Dof robot arm with a force and torque sensor that is controlled with a passive variable Cartesian impedance controller, an ultrasound probe and an RGB-D camera (see \autoref{fig:realenv}).
 
-\subsection{Leader} 
+\section{Leader} 
 % The leader part of this work is composed by three parts: the haptic interface, the virtual environment and the streaming of the output of the ultrasound probe. 
 The haptic interface is the input device that the physician uses to control the relative position and orientation of the robot in real-time. It is controlled with a standard impedance control. We mapped the positions as follows:
 \begin{equation}
@@ -50,7 +50,7 @@ Another consequence related to the use of a virtual environment is the possibili
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection{Follower}
+\section{Follower}
 For the robot's controller, we used the FDCC controller\cite{scherzinger2017forward}, where the closed-loop behaviour of a Cartesian compliant controller relates the external wrenches applied to the end-effector of the robot to a mass-spring-damper model as follows:
 %is based on a mass-spring-damper model:
 \begin{equation}
@@ -101,7 +101,7 @@ $1/\Delta t$ is the controller frequency.
 When $T \le T_{min}$ is not satisfied, the stiffness decreases to its minimum ($\boldsymbol{K}^d = \boldsymbol{K}^{min}$). 
 
 
-More details on the QP problem formulation and energy tank constraint definition are available in~\cite{beber2023passive} referring to the VF-CF control law, but assuming the target force fixed to be fixed instead of pre-computed.
+More details on the QP problem formulation and energy tank constraint definition are available in~\cite{beber2023passive} referring to the VF-CF control law, but assuming the target force to be fixed instead of pre-computed offline.
 The measured force and torque are used for control but also as feedback for the physician through the haptic interface. A straight one-to-one mapping of these quantities from the sensor to the device produces some vibrations on the haptic interface. This is related to the noise in the F/T sensor readings. To address this problem, we added an exponential moving average filter (EWMA) \cite{roberts1959}, which represent a good trade-off between smoothness and introduced delay:
 \begin{equation}
     \boldsymbol{F}^{ext}_H = \boldsymbol{\alpha} \boldsymbol{F}^{ext}_{cur} + (\boldsymbol{I} - \boldsymbol{\alpha}) \boldsymbol{F}^{ext}_{old} 
