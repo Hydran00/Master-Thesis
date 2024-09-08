@@ -1,0 +1,38 @@
+\newpage
+\chapter{Connection requirements}
+
+The problem of transmitting large data is one of the open problems in the information technology research area. A teleoperated system like the one presented in this work need a stable, low-latency connection with high bandwidth requirements. In the proposed framework I needed to transmit different types of data with different requirements. We defined requirements as \textit{critical} when a connection drop could harm the patient or cause damage to the equipment.
+%\begin{itemize}
+%	\item Ultrasound image stream: high bandwidth with medium latency
+%	\item Force/Torque measurement from the F/T sensor: very low bandwidth but also very low latency
+%	\item Point cloud of the patient: high bandwidth with medium latency
+%	\item leader haptic device target pose: very low bandwidth and very low latency
+%	\item SMPL body parameters: very low bandwidth and medium latency
+%	content...
+%\end{itemize}
+\newcommand{\cmark}{\ding{51}}%
+\newcommand{\xmark}{\ding{55}}%
+
+\begin{table*}[!ht]
+	\centering
+
+	\begin{tabular}{|c|c|c|c|}
+		\hline
+		& Critical & High Bandwidth($>$5MB/s) & Low Latency ($<$5ms)\\
+		\hline
+		Ultrasound image stream & \xmark & \cmark & \cmark \\
+		\hline
+		Force/Torque measurement & \cmark & \xmark & \cmark \\
+		\hline
+		Haptic device pose measurement & \cmark & \xmark & \cmark \\
+		\hline
+		Point cloud of the patient & \xmark & \cmark & \xmark \\
+		\hline
+		SMPL body parameters  & \xmark & \xmark & \cmark \\
+		\hline
+		Robot state & \xmark & \xmark & \cmark \\
+		\hline
+	\end{tabular}
+	\caption{Connection requirements for the teleoperation framework}
+	\label{tab:comparison}
+\end{table*}
