@@ -1,3 +1,20 @@
-\chapter{Conclusion}
-\label{cha:conclusion}
-Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec sed nunc orci. Aliquam nec nisl vitae sapien pulvinar dictum quis non urna. Suspendisse at dui a erat aliquam vestibulum. Quisque ultrices pellentesque pellentesque. Pellentesque egestas quam sed blandit tempus. Sed congue nec risus posuere euismod. Maecenas ut lacus id mauris sagittis egestas a eu dui. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos. Pellentesque at ultrices tellus. Ut eu purus eget sem iaculis ultricies sed non lorem. Curabitur gravida dui eget ex vestibulum venenatis. Phasellus gravida tellus velit, non eleifend justo lobortis eget. 
+\cleardoublepage
+\chapter{Conclusions}
+In this work, we addressed the problem of patient specificity mainly
+for the context of robotised lung ultrasound. Through a model that
+embeds the pose and the shape of the human body, we were able to
+generate an anatomical skeleton. We then implemented an automatic way
+of generating VF from the skeletal model, and used
+them to constrain the physical interaction to the intercostal areas. The framework has been validated through quantitative experiments:
+at first, we measured the repeatability and generalisation capability
+of the body modelling approach; secondly, we evaluated the impact of
+the VF in the examination by monitoring the execution time in the 2 and 4 frontal areas of a clinically validated ultrasound
+protocol. Results show higher-than-acceptable body modelling
+repeatability, while patient subjectivity is taken is appropriately considered. The ultrasound protocol was executed faster with the
+VF, indicating a promising research direction.
+Potential future work includes the integration of real-time
+measurements, such as contact force, to enhance the body model with
+viscoelastic properties, e.g., \cite{beber2024passive}, and to
+compensate for the limitations of the vision-based approach. We also
+plan to conduct further studies involving multiple clinicians and a
+larger pool of subjects.

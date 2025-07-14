@@ -1,9 +1,11 @@
-\newpage
+\cleardoublepage
 \chapter{Human Body Estimation}
-In this chapter, I will explain how I managed to estimate the parametric model of the patient exploiting visual information.
+\label{chapter:hbe}
+I will describe in this chapter how we used visual information to estimate a patient's parametric model. Determining the form and orientation of the human body is an essential undertaking in multiple domains, such as biomechanics, computer vision, medical imaging, robotics, and human-computer interaction. Human body estimation is essential for creating systems that can interact with patients in a safe and effective manner.
+This issue presents many challenges, from the variety of the human body shape to the complexity of the human skeletal structure.
 
 \section{SMPL models family}
-For the body shape and pose, there is a well known model called SMPL (Skinned Multi-Person Linear Model) \cite{SMPL:2015} which is a realistic 3D model of the human body that is based on skinning and blend shapes. SMPL is learned from thousands of 3D body scans. SMPL model pose is described by 23 body joints together with body position and orientation called $\vec{\theta}$, while the body shape is described by 10 parameters called $\vec{\beta}$. Each $\theta_i, i \in [1,21] $ represents the 3D orientation of a human joint with respect to its kinematic parent. The kinematic tree is expressed as a connectivity map that connect each joint to its child, as shown in \autoref{fig:human-body-estimation:kin_tree}.
+For the body shape and pose, there is a well known model called SMPL (Skinned Multi-Person Linear Model) \cite{SMPL:2015} which is a realistic 3D model of the human body that is based on skinning and blend shapes. SMPL is learned from thousands of 3D body scans. SMPL model pose is described by 23 body joints together with body position and orientation called $\vec{\theta}$, while the body shape is described by 10 parameters called $\vec{\beta}$. Each $\theta_i, i = 1,...,23 $ represents the 3D orientation of a human joint with respect to its kinematic parent. The kinematic tree is expressed as a connectivity map that connect each joint to its child, as shown in \autoref{fig:human-body-estimation:kin_tree}.
 \begin{figure}[h]
     \centering
     \includegraphics[width=0.07\linewidth]{images/kinematic_tree.png}
@@ -24,11 +26,11 @@ The difference between SMPL and SMPLX is show in \autoref{fig:human-body-estimat
     \caption{The comparison of the number and location of joints for SMPL and SMPLX}
     \label{fig:human-body-estimation:smpl}
 \end{figure}
-These more recent extensions of SMPL can be used in tasks where knowing the exact hand configuration is crucial or when the facial expression information can be exploited in some way. In my opinion, SMPL-H and SMPLX will be soon introduced in different human-robot collaboration scenarios. Since for RLU hands and facial expressions were not included in the logic of my thesis I took the SMPL for modelling the patient state.
+These more recent extensions of SMPL can be used in tasks where knowing the exact hand configuration is crucial or when the facial expression information can be exploited in some way. In my opinion, SMPL-H and SMPLX will be soon introduced in different human-robot collaboration scenarios. Since hands and facial expressions were not necessary in the logic for RUSS, we opted for the SMPL model for representing the patient's state.
 
 \section{Human body pose estimation}
 As already mentioned in the previous section, the SMPL model is composed by $\vec{\theta}$ and $\vec{\beta}$. It is possible to animate a SMPL model in real-time if $\vec{\beta}$ does not need to be optimized, updating just the $\vec{\theta}$ parameters of the model.
-For this purpose I used a \verb|ZED2| stereo camera which integrates an AI body tracking module\cite{zed_body_tracking} based on the depth and RGB image measured by the sensor itself. The body tracking module provides different skeleton models. I chose the one more similar to SMPL, which is also the most informative, since it is the one with the highest number of keypoints (38). A figure showing the pose of the keypoints is reported in \autoref{fig:human-body-estimation:zed_kp}.
+For this purpose we used a \verb|ZED2| stereo camera. We selected the ZED2 camera for its ability to capture high-resolution depth information, which is crucial for accurate real-time body tracking. Its body-tracking module~\cite{zed_body_tracking} simplifies the task of extracting 3D keypoints necessary for SMPL model integration.  The body tracking module provides different skeleton models. We chose the one more similar to SMPL, which is also the most informative, since it is the one with the highest number of keypoints (38). A figure showing the pose of the keypoints is reported in \autoref{fig:human-body-estimation:zed_kp}.
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.5\linewidth]{images/zed_kp.png}
@@ -39,14 +41,14 @@ Comparing \autoref{fig:human-body-estimation:smpl} and \autoref{fig:human-body-e
 
 \section{Human body shape estimation}
 \label{section:human-body-shape-estimation}
-Given that this master's thesis aims to address the problem of the physical variability between patients in RLU, $\vec{\beta} \in \mathbb{R}^{10}$ is a crucial parameter to be considered since it affects the rib cage dimension and position. An external source of information is required in order to evaluate a metric for the shape parameters optimization. I decided to use the same exteroceptive sensor used for the pose estimation procedure: the \verb|ZED2|. Therefore, I retrieved the raw point cloud of the scene. 
+Given that this master's thesis aims to address the problem of the physical variability between patients in RLU, $\vec{\beta} \in \mathbb{R}^{10}$ is a crucial parameter to be considered since it affects the rib cage dimension and position. An external source of information is required in order to evaluate a metric for the shape parameters optimization. We decided to use the same exteroceptive sensor used for the pose estimation procedure: the \verb|ZED2|. Therefore, we retrieved the raw point cloud of the scene. 
 
 \section{Human Instance Segmentation with YOLOv8}
-Since I needed an intelligent way of ignoring points not belonging to the human, I exploited YOLOv8 segmentation neural network from Ultralytics in order to detect which image pixel belongs to the patient. YOLOv8 segmentation is an advanced computer vision model that combines object detection with instance segmentation. Ultralytics provides different models for the instance segmentation of 80 different classes. 
+Since we needed an intelligent way of ignoring points not belonging to the human, we exploited YOLOv8\cite{jocher2023yolov8} segmentation neural network from Ultralytics in order to detect which image pixel belongs to the patient. YOLOv8 segmentation is an advanced computer vision model that combines object detection with instance segmentation. Ultralytics provides different models for the instance segmentation of 80 different classes. 
 When applied to human body segmentation, it not only identifies humans in an image but also generates a precise mask outlining the shape and boundaries of the body. This is achieved through pixel-level predictions, allowing the model to differentiate the human body from the background and other objects. YOLOv8's segmentation capabilities are highly efficient, making it suitable for real-time applications like pose estimation, augmented reality, and medical imaging.  
 
 \section{Point Cloud Filtering using YOLOv8Seg Mask}
-The mask computed by YOLO is represented by the vertices of a polygon. I converted it to a bit mask matrix through the \verb|fillPoly| of \verb|opencv| having 1 or 0 for each pixel of the original image. The resulting image is then used to decide which points of the point cloud to discard. Moreover, I exploited the bounding box provided by YOLO in addition to the mask to limit the amount of computation needed to filter the point cloud. To be more explicit, I restricted the double nested loop over the image pixels to the bounding box instead of the full image. The resulting point cloud is illustrated in \autoref{fig:human-body-estimation:yolo-seg}
+The mask computed by YOLO is represented by the vertices of a polygon. We converted it to a bit mask matrix through the \verb|fillPoly| of \verb|opencv| having 1 or 0 for each pixel of the original image. The produced image is then used to decide which points of the point cloud to discard. Moreover, we exploited the bounding box provided by YOLO in addition to the mask to limit the amount of computation needed to filter the point cloud. To be more explicit, we restricted the double nested loop over the image pixels to the bounding box instead of the full image. The resulting point cloud is illustrated in \autoref{fig:human-body-estimation:yolo-seg}
 
 
 \begin{figure}[h]
@@ -68,14 +70,14 @@ SKEL\cite{keller2023skel} is a biomechanical skeleton model that maps the SMPL s
     \item Data utilization: To improve the accuracy of the skeletal structure and joint placements, SKEL makes use of the BioAMASS dataset, which integrates motion capture data with anatomical information. In comparison, SMPL does not include such comprehensive biomechanical data.
 \end{itemize}
 
-Compared to the SMPL framework, SKEL represents a substantial leap in producing 3D human models that are more lifelike and anatomically precise. An illustrative image of SKEL can be observed in \autoref{fig:human-body-estimation:skel} 
+Compared to the SMPL framework, SKEL represents a substantial leap in producing 3D human models that are more lifelike and anatomically precise. The addition of biomechanical features in SKEL, such as precise joint placements, has significant implications in fields like robotics and rehabilitation, where understanding the exact anatomical configuration is crucial for interaction with human-like movements. An illustrative image of SKEL can be observed in \autoref{fig:human-body-estimation:skel} 
 \begin{figure}[H]
     \centering   \includegraphics[width=0.7\linewidth]{images/skel.png}
     \caption{An image taken from the SKEL paper, as we can see in the images on the left, both the skin and the skeleton are present in the output of the SKEL model}
     \label{fig:human-body-estimation:skel}
 \end{figure}
 \section{SKEL Fitting from SMPL}
-Since I computed the SMPL from the patient state in \autoref{section:human-body-shape-estimation}, the next step was to compute the skeleton inside the SMPL mesh. Since SKEL has the same surface mesh topology and shape parameters $\vec{\beta}$ as SMPL, it can be directly fit to existing SMPL meshes by optimizing its pose parameters to minimize the vertex-to-vertex
+Since we computed the SMPL from the patient state in \autoref{section:human-body-shape-estimation}, the next step was to compute the skeleton inside the SMPL mesh. Since SKEL has the same surface mesh topology and shape parameters $\vec{\beta}$ as SMPL, it can be directly fit to existing SMPL meshes by optimising its pose parameters to minimize the vertex-to-vertex
 error between the SMPL skin and the SKEL skin. The alignment is avoid local minima by aligning the model in this order:
 \begin{enumerate}
 \item Align pelvis
@@ -83,41 +85,147 @@ error between the SMPL skin and the SKEL skin. The alignment is avoid local mini
 \item Align elbows and knees 
 \item Align hands, feet, and neck
 \end{enumerate}
-The order is the same of the kinematic tree since each joint position depends on its predecessor. In order to locally optimize some particular joints, it is sufficient to mask the not relevant contributions in the loss computation. The loss used for the optimization were:
+The order of the kinematic tree is the same since each joint position depends on its predecessor. In order to locally optimise some particular joints, it is sufficient to mask the not relevant contributions in the loss computation. The loss used for the optimization were:
 \begin{itemize}
     \item Pose loss: The loss between the joint position of SMPL and the one of SKEL
     \item Vertex loss: Since the skin mesh of SMPL is the same as SKEL, it is possible to compute vertex-wise displacement
     \item Scapula loss: loss added to regularize the scapula fitting avoiding large values, implemented with masking on non-relevant joints
     \item Spine loss: loss added to regularize the spine fitting avoiding large values, implemented with masking on non-relevant joints
 \end{itemize}
-\TODO add formula
+The optimisation is computed using the \verb|Torch| library, with its \verb|Python| bindings (i.e. \verb|Pytorch|)~\cite{torch2019paszke}. \verb|PyTorch| is an open-source deep learning framework that allows developers to define and manipulate tensors (multi-dimensional arrays) and supports automatic differentiation, which makes it easier to optimise machine learning models. It is widely used for tasks such as computer vision, natural language processing, and reinforcement learning, and is favoured for its dynamic computation graph, which allows for greater flexibility in model building and debugging. 
 \section{Modelling the rib cage projection on the skin}
-Once the SKEL model is computed from the SMPL retrieved from the point cloud, we need to understand where it is located during the robot interaction with the skin. Different geometrical intuition and approximation can be used to estimate how the rib cage is projected on the skin. My first idea was to radially project the skeleton mesh vertices to the skin. The result was poor, especially for ribs far from the projection centre. I then switched to cylindrical projection, considering the cylinder axis parallel to the backbone. The results were qualitatively more realistic than the one produced by the spherical projection. The projection was implemented using ray casting algorithm provided by \verb|Open3d| that finds the 3D intersection point of a ray to a mesh. A visual comparison between radial and cylindrical projection is shown in \autoref{fig:human-body-estimation:skeleton-projection}.
-\begin{figure}[H]
+Once the SKEL model is computed from the SMPL retrieved from the point cloud, we need to understand where it is located during the robot interaction with the skin. Therefore, we developed a method to highlight, at the skin level, the presence of the ribs, beneath the skin surface. We decided to use the  projection for this purpose. 
+ Different geometrical intuition and approximation can be used to estimate how the rib cage is projected on the skin. Our first idea was to radially project the skeleton mesh vertices to the skin. The outcome was poor, especially for ribs far from the projection centre. We then switched to cylindrical projection. Cylindrical projection was chosen over radial projection due to its ability to maintain a consistent distance from the ribcage to the skin, which is essential for avoiding distortions in areas further away from the projection centre. This method ensures a more uniform and accurate representation of the ribs' presence beneath the skin. Hence, we projected every vertex belonging to the inferior and superior border sets towards the skin mesh.
+ The projection direction
+$\boldsymbol{d}_{proj} \in \mathbb{R}^3$ is defined as the vector with
+origin in the cylinder axis passing from $\boldsymbol{s}$ and with end
+in the considered vertex. More formally,
+\begin{equation}
+    \boldsymbol{d}_{proj} = \boldsymbol{v}_i^{y=y'} - \boldsymbol{s}^{y=y'}
+\end{equation}
+where $\boldsymbol{v}^{y=y'}_{i} \in \mathbb{R}^3$ is the vertex of the rib $i$ having local mesh coordinate $y = y'$, while $\boldsymbol{s}^{y=y'} \in \mathbb{R}^3$ is the central vertex $\boldsymbol{s}$, but translated on the $Y$ local mesh coordinate to achieve $y = y'$. 
+The results were qualitatively more realistic than the one produced by the spherical projection. The projection was implemented using ray casting algorithm provided by \verb|Open3d| that finds the 3D intersection point of a ray to a mesh. A visual comparison between radial and cylindrical projection is shown in \autoref{fig:human-body-estimation:skeleton-projection}.
+\begin{figure}[h]
      \centering
-     \begin{subfigure}[b]{0.3\textwidth}
-         \centering
-        \includegraphics[width=\textwidth]{images/body_estimation/radially_proj.png}
-         \caption{}
-         \label{}
-     \end{subfigure}
-     \hfill
-     \begin{subfigure}[b]{0.3\textwidth}
-         \centering
-         \includegraphics[width=\textwidth]{images/body_estimation/cylindrical_proj.png}
-         \caption{}
-         \label{}
-     \end{subfigure}
+     % \begin{subfigure}[b]{0.3\textwidth}
+     %     \centering
+        \includegraphics[trim=0cm 0cm 0cm 2cm, clip, width=0.4\textwidth]{images/body_estimation/radially_proj.png}
+         % \caption{}
+         % \label{}
+     % \end{subfigure}
+     % \hfill
+     % \begin{subfigure}[b]{0.3\textwidth}
+     %     \centering
+         \includegraphics[trim=0cm 0cm 0cm 2cm, clip, width=0.4\textwidth]{images/body_estimation/cylindrical_proj.png}
+         % \caption{}
+         % \label{}
+     % \end{subfigure}
 \caption{Comparison between the two projection methods tested: on the left the radial projection, on the right the cylindrical projection}
 \label{fig:human-body-estimation:skeleton-projection}
 \end{figure}
 
 Since each vertex is projected on the skin, the result is a point cloud. We can reconstruct a mesh from the projection connecting each vertex to his adjacent vertices in the original rib cage mesh.
-The result of such operation is shown in \autoref{fig:human-body-estimation:projection_reconstruction}. As we can notice, the ribs are reconstructed correctly.
+The output of such operation is shown in \autoref{fig:human-body-estimation:projection_reconstruction}. As we can notice, the ribs are reconstructed correctly and the intercostal spaces are well-visible.
 %% TODO parlare dell'ottimizzazione con loss functions ecc
-\begin{figure}[H]
-    \centering   \includegraphics[width=0.7\linewidth]{images/body_estimation/rib_cage_proj.png}
+\begin{figure}[h]
+    \centering   \includegraphics[width=0.8\linewidth]{images/body_estimation/rib_cage_proj.png}
     \caption{The resultant mesh obtained from the point cloud retrieved by the cylindrical projection of the rib cage original mesh.}
     \label{fig:human-body-estimation:projection_reconstruction}
 \end{figure}
-The idea is to create a virtual fixture that guide the physician towards the intercostal area, exploiting the semantic knowledge expressed by the SKEL model to compensate the lacks of the teleoperation.
+Reconstructing a mesh in this way allows for a visual and geometric understanding of the ribcage beneath the skin, creating a tangible representation that can be used in simulations and further biomechanical analysis. The problem of this method is that many of the projected triangles are overlapped in the same areas as the output of the projection, making the mesh not viable for virtual fixtures enforcement algorithms that are base on plane active constraints built on top of those triangles. Therefore, we develop a different method to estimate the ribs' presence under the skin.
+The idea was to project the superior and inferior borders of each rib. The faces corresponding to the superior and inferior borders were manually labelled using \verb|Meshlab|. From these faces it was then easy to extract the upper and bottom vertex of each face considering the Y component of the vertex coordinate. These vertices can be visualised in \autoref{fig:human-body-estimation:manually-labelled}. 
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.9\linewidth]{images/body_estimation/manually_labelled.png}
+    \caption{The superior (blue) and inferior (red) vertices coming from the manually labelled superior and inferior faces of the rib borders }
+    \label{fig:human-body-estimation:manually-labelled}
+\end{figure}
+Once the superior and inferior vertices were extracted, we project them using the cylindrical projection in the same way as before, obtaining \autoref{fig:human-body-estimation:borders-projection}
+\begin{figure}[h]
+    \centering
+    \includegraphics[trim=0cm 0cm 15cm 0cm, clip, width=0.65\linewidth]{images/body_estimation/projected.png}
+    \caption{The result of projection of the rib borders on the SKEL skin model, superior borders are marked in blue while inferior in red.}
+    \label{fig:human-body-estimation:borders-projection}
+\end{figure}
+
+\section{3D regions from rib projections}
+The projected vertices can be used to define 3d regions. This was achieved by interpolating each superior and inferior set of projected points with a cubic spline. This procedure produces two continuos lines that can be averaged to identify the intermediate line between the two. The process is depicted in \autoref{fig:human-body-estimation:borders-spline}.
+\begin{figure}[H]
+    \centering
+    \includegraphics[trim=10cm 0cm 10cm 5cm, clip, width=1\linewidth]{images/body_estimation/rib_interp.png}
+    \caption{Superior (in blue) and inferior(in red) projected vertices and the average spline in their centre (in green) for the second right rib.}
+    \label{fig:human-body-estimation:borders-spline}
+\end{figure}
+\noindent
+Finally, we wrapped an elliptical cross-section tube along the central line. The choice of the elliptical cross-section is due to the fact that we wanted the tube to extend out of the patient skin in such a way that the robot target point is constrained before entering in contact. For this reason, we implemented Algorithm \ref{alg:sweep_ellipse}.
+\begin{algorithm}
+    \caption{Sweep Ellipse Along Spline}
+    \label{alg:sweep_ellipse}
+    \begin{algorithmic}[1]
+        \Function{Ellipse}{$a, b, n\_points$}
+            \State $t \gets \text{linspace}(0, 2\pi, n\_points)$
+            \State $x \gets a \cdot \cos(t)$
+            \State $y \gets b \cdot \sin(t)$
+            \State $z \gets 0$ \Comment{Ellipse in the XY plane}
+            \State \Return $(x, y, z)$
+        \EndFunction
+
+        \State $N \gets 40$ \Comment{Number of vertical divisions}
+        \State $control\_points \gets [midx, midy, midz]$
+        \State Compute the spline $(tck, u)$ using $control\_points$
+        \State $u\_fine \gets \text{linspace}(0, 1, N)$
+        \State $spline\_points \gets \text{splev}(u\_fine, tck)$
+
+        \State Compute tangents along the spline
+        \State Normalize all tangents
+
+        \State $a \gets 1.3 \cdot d$ \Comment{Ellipse semi-minor axis}
+        \State $b \gets 2.6 \cdot d$ \Comment{Ellipse semi-major axis}
+        \State $n\_ellipse\_points \gets 80$
+
+        \State $vertices \gets$ List()
+        \State $faces \gets$ List()
+        \State $i \gets 0$
+        \ForAll{$(point, tangent)$ in $spline\_points$}
+            \If{tangent is close to $(0, 0, 1)$}
+                \State $normal \gets (0, 1, 0)$
+            \Else
+                \State $normal \gets (0, 0, 1)$
+            \EndIf
+            \State $binormal \gets \text{cross}(tangent, normal)$
+            \State $binormal$.Normalise()
+            \State $normal \gets \text{cross}(binormal, tangent)$
+
+            \State Define rotation matrix $R$ using $binormal$, $normal$, and $tangent$
+            \State $ellipse\_points \gets \text{Ellipse}(a, b, n\_ellipse\_points)$
+            \State $R \gets [binormal, normal, tangent]$.Transpose()
+            \State $ellipse\_points$.Rotate$(R)$
+            \State $ellipse\_points$.Translate$(point)$
+            \State $vertices$.Extend$(ellipse\_points)$
+
+            \If{$i > 0$}
+                \State $n \gets \text{len}(vertices)$
+                \For{$j \gets 0$ \textbf{to} $n\_ellipse\_points-1$}
+                    \State $face \gets [n - 2 * n\_ellipse\_points + j,$ \newline
+                    \hspace*{8em} $ n - 2 * n\_ellipse\_points + (j + 1) \%n\_ellipse\_points,$ \newline
+                    \hspace*{8em} $n - n\_ellipse\_points + j]$ 
+                \EndFor
+            \EndIf
+            \State $i \gets i + 1$
+        \EndFor
+    \end{algorithmic}
+\end{algorithm}
+The tubes relative to each rib can be observed in \autoref{fig:human-body-estimation:sweep_ellipse}
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[trim=10cm 0cm 10cm 5cm, clip,width=1\linewidth]{images/body_estimation/vf_rib.png}
+    \caption{3D mesh generated by the Algorithm \autoref{alg:sweep_ellipse} for the second right rib.}
+    \label{fig:human-body-estimation:sweep_ellipse}
+\end{figure}
+
+% \clearpage
+% \newpage
+% \mbox{}
+% \clearpage
+

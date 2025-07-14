@@ -1,18 +1,23 @@
 \newpage
 \chapter{Virtual Fixtures}
 
-Virtual fixtures (VF), also called active constraints, are a family of algorithms used for limiting the workspace of the robot for safety and accuracy reasons, thus they are widely used in medical robotics. They were introduced in 1992~\cite{rosemberg1992use} by Rosemberg in an augmented reality teleoperation setup to simulate physical barriers, fields, and guides, designed to assist in the user during the teleoperation. 
-VFs can be modelled with different shapes as shown in~\cite{bettini2004vision}where the author proposed a tube-like boundary with an admittance control and haptic feedback. Later on, different works show the crucial importance of VFs in medical robotics scenarios where the workspace of the robot must be limited to the area of interest to avoid hurting patients. In 2012 Rydén et al.~\cite{ryden2012forbidden} proposed an algorithm for the identification of a forbidden region virtual fixture from point clouds analysis that was used for operating on a beating hearth. The virtual fixture region is computed, considering each point of the point cloud as a 3D sphere with a particular radius. A known problem of VFs is the non passivity of the system when crossing or getting closer to the boundaries. 
+Virtual fixtures (VF), also called active constraints, are a family of algorithms used for limiting the workspace of the robot for safety and accuracy reasons, thus they are widely used in medical robotics. They were introduced in 1992~\cite{rosemberg1992use} by Rosemberg in an augmented reality teleoperation setup to simulate physical barriers, fields, and guides, to assist the user during teleoperation. 
+VFs can be modelled with different shapes, as shown by Bettini et al.~\cite{bettini2004vision}, where the author proposed a tube-like boundary with an admittance control and haptic feedback. Later on, different works showed the crucial importance of VFs in medical robotics scenarios, where the robot's workspace must be limited to the area of interest to avoid hurting patients. In 2012 Rydén et al.~\cite{ryden2012forbidden} proposed an algorithm for the identification of a forbidden region virtual fixture from point clouds analysis that was used for operating on a beating heart. The virtual fixture region is computed, considering each point of the point cloud as a 3D sphere with a particular radius.
 
 \section{Classification of VFs}
 
-A good classification of these algorithms is given in~\cite{bowyer2014active}. One of the most significant classifications is whether the fixture belongs to the \textit{forbidden region VF} or \textit{guidance VF}. The former bounds a manipulator’s tool to certain regions within its task or joint space, the latter encourages the user to move the tool along a specific pathway or toward a specific target. Usually, guidance constraints are more intrusive upon the user than forbidden region constraints in normal operation. The second meaningful classification for this work highlighted by the author is whether the constraint is \textit{unilateral} or \textit{bilateral}.
-A unilateral virtual fixture is a constraint active only by one side, while the bilateral acts on both sides. 
+A good classification of these algorithms is given by Bowyer et al.~\cite{bowyer2014active}. One of the most significant classifications is whether the fixture belongs to the \textit{forbidden region VF} or \textit{guidance VF}. The former bounds a manipulator’s tool to certain regions within its task or joint space, the latter encourages the user to move the tool along a specific pathway or toward a specific target. Usually, guidance constraints are more intrusive upon the user than forbidden region constraints in normal operation. The second meaningful classification for this work highlighted by the authors is whether the constraint is \textit{unilateral} or \textit{bilateral}.
+A unilateral virtual fixture is a constraint active only by one side, while the bilateral applies on both sides. 
 Regional VFs (forbidden region) often are implemented with unilateral constraints, whereas guidance VFs leverage on bilateral limits.
 The last distinction is between \textit{static} and \textit{dynamic} constraints that depend on if the geometry exploited by the algorithm change during the operation.
 
+\section{Passivity of VFs}
+A system's ability to remain passive guarantees that it will perform steadily and predictably, particularly when interacting with people or other external influences. A passive system won't produce energy on its own, meaning that it won't move suddenly or erratically, which might lead to the robot behaving unpredictably or dangerously, especially if it is close to humans.
+This issue is relevant in the case of virtual fixtures, because the robot must abide by the guidelines established by the virtual bounds. If the system is not passive, the robot may push too hard against a boundary that exists virtually, which could result in erratic movements or vibrations. This can cause the robot to move erratically and endanger the surrounding area or the person operating it. An example of non-passivity could be observed when regional constraints are used. In this case, the operator usually relies on a force feedback exerted by a haptic interface to perceive the guidance. If the user pushes the device too hard, it might cause problems if the device is released accidentally. Another non-passive effect caused by guidance constraints happens when repulsive constraints are employed. In that situation, crossing the boundary of the fixture results in a sudden force redirection that may lead to a complicated control of the haptic interface. These effects can be mitigated in scenarios like robot surgery applications at robot control level, as demonstrated by Selvaggio et al.~\cite{selvaggio2018passive},  by means of a passive impedance controller. In the case of forbidden regions VF a similar unsafe behaviour can arise when the target pose is distant from the active constraints that are already constraining the motion. If the robot finds a way to bypass the constraints (like sliding on curve constraints), high velocities may be generated by the controller to make the end effector reach the feasible target. Also in this context, a passivity-based controller could be beneficial to the system. VFs are subdivided mainly into two categories: regional and guidance constraints. We could have implemented guidance constraints using force feedback to guide the operator, but that force would be added to the force feedback of the operator, which would potentially confuse them with the feedback generated by the contact with the environment.
+This was the main reason why we opted for forbidden region VF. The issue of passivity was addressed and solved while employing the variable impedance passive controller, despite not being utilised for the experiments.
+
 \section{VFs Generation}
-In the literature, different methods for the generation of virtual fixture were proposed. The survey~\cite{bowyer2014active} mentions the most common types of constraint representations used in the literature.
+In the literature, different methods for the generation of virtual fixture were proposed. The previously cited survey reported the most common types of constraint representations used in the literature:
 \begin{enumerate}
     \item (a) Point: A single 3d point can be used to generate an attractive or repulsive potential field
     \item (b) Line: can be used to generate a guidance
@@ -29,6 +34,119 @@ In the literature, different methods for the generation of virtual fixture were 
     \caption{The most common types of virtual fixture geometries reported by Bowyer et al.}
     \label{fig:virtual_fixture:vf_geoms}
 \end{figure}
-\TODO storia delle VF con reference
-\cite{selvaggio2018passive}
-\cite{soldati_proposal_2020}
+We decided to design a mesh VF (\autoref{fig:human-body-estimation:sweep_ellipse}) that overlaps the ribs in such a way that it guides the practitioner in the intercostal spaces in a smooth-sliding process.
+Once the forbidden regions are defined, they can be enforced as VF through a constraint optimisation problem, thereby preventing the ultrasound probe mounted on the robot's end effector from penetrating during the operation.
+As a result, the system gains robustness with respect to eventual operator errors due to faulty perception. In such a case, the reference coming from the teleoperation will be filtered and slide on top of the surface of the virtual fixture until the probe reaches the desired intercostal area. 
+In addition, we will prevent the operator from applying high force to the ribs, potentially harming the patient.
+Notably, the skeletal model of the body is generated based on the patient's anatomical characteristics, ensuring that the forbidden regions on the ribs are tailored to the individual.
+
+\section{Forbidden Region Enforcement}
+ The motion control of the robot end effector is formulated as a quadratic optimisation problem with linear constraints. %~\cite{}%.
+A general formulation of the problem is the following:
+
+\begin{equation}
+    \begin{aligned}
+    \argmin_{\boldsymbol{\Delta x}} \;&\Vert \boldsymbol{\Delta x} - \boldsymbol{\Delta x}_d \Vert_2,\\
+    \text{subject to} \;\;&\boldsymbol{A} \boldsymbol{\Delta x} \geq \boldsymbol{b}
+\end{aligned}
+\label{eq:qp_vf}
+\end{equation}
+
+where $\boldsymbol{\Delta x} \in \mathbb{R}^3$ and $\boldsymbol{\Delta x}_d \in \mathbb{R}^3$ represent, respectively, the actual incremental position of the tool and the desired incremental position of the tool. The linear constraints are defined through the matrices $\boldsymbol{A} \in \mathbb{R}^{n \times 3}$ and $\boldsymbol{b} \in \mathbb{R}^n$ with $n$ the number of constraints. 
+
+The rationale behind expressing the problem as a quadratic
+minimisation problem is that the forbidden zones can be defined by
+multiple walls which are described by hyper-planes with normal
+$\boldsymbol{n} \in \mathbb{R}^3$ and a point
+$\boldsymbol{p} \in \mathbb{R}^3$. This approach allows for the
+imposition of constraints on the movement of the tip, ensuring that
+only the positive part of the hyper-plane is admissible. Said
+$d_t \in \mathbb{R}$ the absolute value of the distance between the
+plane and the tooltip at an instant $t \in \mathbb{R}^3$,
+$\Delta d \in \mathbb{R}^3$ the change of the signed distance and
+$\boldsymbol{x}$ the current end effector position, we get
+\begin{equation}
+    \begin{aligned}
+        &d_{t-1}= \boldsymbol{n}^{\top}(\boldsymbol{x}-\boldsymbol{p})\\
+        &\Delta d = \boldsymbol{n}^{\top}\boldsymbol{\Delta x}\\
+        &d_t=d_{t-1} + \Delta d \geq 0\\
+        &\boldsymbol{n}^{\top}\boldsymbol{\Delta x}\geq-\boldsymbol{n}^{\top}(\boldsymbol{x}-\boldsymbol{p}).
+    \end{aligned}
+\end{equation}
+The linear constraint of the quadratic problem~\eqref{eq:qp_vf} can be
+obtained by selecting $\boldsymbol{A} = \boldsymbol{n}^{\top}$ and
+$\boldsymbol{b} =
+-\boldsymbol{n}^{\top}(\boldsymbol{x}-\boldsymbol{p})$. We added a
+minor modification to this constraint to account for the shape of the
+ultrasound probe. We approximated the ultrasound probe contact surface
+with a sphere of radius $r$. Therefore, we can rewrite
+$\boldsymbol{b}$ as \begin{equation} \boldsymbol{b} =
+  -\boldsymbol{n}^{\top}(\boldsymbol{x} - \boldsymbol{p}) + r
+\end{equation}
+which ensures us that the probe stays out of the forbidden area. In the following section, we will explain how the constraint optimisation problem was solved in case of VF described by meshes.
+
+% \subsubsection{Projecting the skeletal model onto the body surface}
+\section{Mesh-Based Polygon Constraint Optimisation}
+Li et al.~\cite{li2020anatomical} showed that it is possible to consider
+only a part of a mesh to build the optimisation problem. A sphere is
+defined within which all positions attainable by the robot end
+effector, $\boldsymbol{x} \in \mathbb{R}^3$, in a control cycle are
+contained. The mesh triangles within this sphere account for the
+motion constraint. For each triangle, the point at which the distance
+between the end effector and the plane defined by the triangle is
+minimum is determined, defined as the \textit{closest point} and
+dubbed $\mathcal{CP} \in \mathbb{R}^3$. If the $\mathcal{CP}$ is
+located within the triangle, no alterations are required. Conversely,
+if the $\mathcal{CP}$ is positioned outside the triangle, it is
+necessary to project it onto the edge of the triangle.  Subsequently,
+the planes must be incorporated as active constraints into the
+minimisation problem.  The plane normals added to the row of the
+constraint matrix $\boldsymbol{A}$ are determined by the location of
+$\mathcal{CP}_i$ accounting for these cases:
+\begin{enumerate}
+
+\item \textbf{Condition 1}: The $\mathcal{CP}_i$ is in the triangle
+  and $\boldsymbol{x}$ is the positive side of the face normal
+  $\mathcal{N}_i$. The plane having normal
+  $\mathcal{N}_i - \mathcal{CP}_i$ is added to the constraints.
+
+\item \textbf{Condition 2}: The $\mathcal{CP}_i$ is on the edge of the
+  triangle and the local surface described by the considered triangle
+  and the adjacent triangle which shares $\mathcal{CP}_i$ is
+  convex. The plane having normal $\boldsymbol{x}-\mathcal{CP}_i$ is
+  added to the constraints.
+  
+\item \textbf{Condition 3}: The $\mathcal{CP}_i$ is on the edge of the
+  triangle, $\boldsymbol{x}$ is on the positive side of the face
+  normal $ \mathcal{N}_i$ and the local surface described by the
+  considered triangle and the adjacent triangle which shares
+  $\mathcal{CP}_i$ is concave. The plane having normal
+  $\mathcal{N}_i - \mathcal{CP}_i$ is added to the constraints.
+\end{enumerate}
+
+The list of planes described by their normal and closest point can be used in Algorithm \ref{alg:virtual_fixtures:planes} as explained by the authors to generate the correct linear constraints for the quadratic programming optimisation problem.
+\begin{algorithm}
+    \begin{algorithmic}
+    \State \textbf{Input}: Current end effector position 
+    $x$, intersected triangles $\mathcal{T}$ and corresponding closest points $\mathcal{CP}$ and face normals $\mathcal{N}$
+    \State \textbf{Output}: List of active constraints $\mathcal{L}$
+
+    % \begin{algorithmic}[1]
+    \ForAll{triangle $\mathcal{T}_i \in \mathcal{T}$}
+        \If{$\mathcal{CP}_i$ \textit{in-triangle} \& $\mathcal{N}_i^T (x-\mathcal{CP}_i) \geq 0$}
+            \State add $\mathcal{N}_i$,$\mathcal{CP}_i$ to $\mathcal{L}$
+        
+        \ElsIf{$\mathcal{CP}_i$ \textit{on-edge}}
+            \State Find adjacent triangle(s) $\mathcal{T}_{i,a}$
+            \If{$\mathcal{CP}_i == \mathcal{CP}_{i,a}$ \& \textcolor{black}{locally convex}}
+                \State add \{$x-\mathcal{CP}_i$, $\mathcal{CP}_i$\} to $\mathcal{L}$
+            
+            \ElsIf{$\mathcal{N}_i^T (x-\mathcal{CP}_i) \geq 0$ \& \textcolor{black}{locally concave}}
+                \State add \{$\mathcal{N}_i$, $\mathcal{CP}_i$\} to $\mathcal{L}$
+            \EndIf 
+        \EndIf
+    \EndFor
+    \end{algorithmic}
+    \caption{Mesh Linear Constraints Computation}
+    \label{alg:virtual_fixtures:planes}
+\end{algorithm}

@@ -15,11 +15,15 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % 2 side format
-\documentclass[epsfig,a4paper,11pt,titlepage,twoside,openany]{book}
+\documentclass[epsfig,a4paper,11pt,titlepage,twoside,openright]{book}
 \usepackage{epsfig}
 \usepackage{plain}
 \usepackage{setspace}
-\usepackage[paperheight=29.7cm,paperwidth=21cm,outer=3cm,inner=3cm,top=3cm,bottom=3cm]{geometry} % layout setting
+\usepackage{graphicx}
+\usepackage{algorithm}
+% \usepackage[ruled]{algorithm2e}
+\usepackage{algpseudocode}
+\usepackage[paperheight=29.7cm,paperwidth=21cm,outer=2.5cm,inner=3.5cm,top=2cm,bottom=2cm]{geometry} % layout setting
 \usepackage{titlesec} % custom setup title of chanpter
 % \usepackage{newtxtext,newtxmath} % times new roman
 \usepackage{hyperref}
@@ -30,6 +34,9 @@
 \usepackage{caption}
 \usepackage{subcaption}
 \usepackage{amsmath}
+\DeclareMathOperator*{\argmax}{arg\,max}
+\DeclareMathOperator*{\argmin}{arg\,min}
+\usepackage{booktabs}
 \usepackage{pifont}% http://ctan.org/pkg/pifont
 %%%%%%%%%%%%%%
 % support for accented letters
@@ -49,7 +56,7 @@
   \pagenumbering{gobble} 
   \input{front}
 
-  \clearpage
+  % \clearpage
  
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -58,6 +65,7 @@
 %% Thanks/ Acknowledgements section is optional
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  
   \input{acknowledgements}
   \clearpage
   \pagestyle{plain} % no heading, footer with centered page number
@@ -92,8 +100,8 @@
     \begingroup
       % no page break between chapters
       % override clear page commands
-      \renewcommand{\cleardoublepage}{} 
-      \renewcommand{\clearpage}{} 
+      % \renewcommand{\cleardoublepage}{} 
+      % \renewcommand{\clearpage}{} 
       % override format of title chapter
       % from
       %   Chapter X
@@ -109,7 +117,7 @@
       \titlespacing*{\subsection}{0pt}{0.10in}{0.02in}
       
       % summary / abstract
-      \input{abstract}
+      % \input{abstract}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Note
@@ -128,16 +136,25 @@
       %
       % \input or \include
       %
-      
+    \chapter*{Abstract} % no number
+    \label{abtract}
+    
+    \addcontentsline{toc}{chapter}{Abstract} % add to index
 
+
+      The introduction of artificial intelligence and robotics in telehealth is enabling personalised treatment and supporting teleoperated procedures such as lung ultrasound, which has gained attention during the COVID-19 pandemic. Although fully autonomous systems face challenges due to anatomical variability, teleoperated systems appear to be more practical in current healthcare settings. This paper presents an anatomy-aware control framework for teleoperated lung ultrasound. Using biomechanically accurate 3D models such as SMPL and SKEL, the system provides a real-time visual feedback and applies virtual constraints to assist in precise probe placement tasks. Evaluations on four subjects show the accuracy of the biomechanical models and, and then an evaluation with two users reveals the efficiency of the system in improving probe placement and reducing procedure time compared to traditional teleoperation. The results demonstrate that the proposed framework enhances the physician's capabilities in executing remote lung ultrasound examinations, towards more objective and repeatable acquisitions.
+      
+      % \newpage
+      
       \input{sections/introduction}
       \input{sections/us_protocols}
       \input{sections/framework_description}
-      \input{sections/network_setup}
+      % \input{sections/network_setup}
       \input{sections/connection_requirements}
       \input{sections/body_estimation}
       \input{sections/virtual_fixture}
-      
+      \input{sections/experiments}
+      \input{sections/conclusions}
     \endgroup
 
 
@@ -146,8 +163,9 @@
     % add chapter to index
     \addcontentsline{toc}{chapter}{Bibliography}
     % alphabetical order of authors
-    \bibliographystyle{plain}
-\bibliography{bibliography/lung_us,bibliography/smpl, bibliography/virtual_fixture, bibliography/reference_med, bibliography/reference_vic,bibliography/reference_vr}
+    % \bibliographystyle{plain}
+    \bibliographystyle{unsrt}
+\bibliography{bibliography/lung_us,bibliography/smpl, bibliography/virtual_fixture, bibliography/reference_med, bibliography/reference_vic,bibliography/reference_vr,bibliography/icra_ref,bibliography/network}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Nota
@@ -184,10 +202,10 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     
 
-    \titleformat{\chapter}
-        {\normalfont\Huge\bfseries}{Appendix \thechapter}{1em}{}
-    % Appendix / attachment section - optional
-    \appendix
-    \input{attachments}
+    % \titleformat{\chapter}
+    %     {\normalfont\Huge\bfseries}{Appendix \thechapter}{1em}{}
+    % % Appendix / attachment section - optional
+    % \appendix
+    % \input{attachments}
 
 \end{document}
